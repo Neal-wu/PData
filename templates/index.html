@@ -84,9 +84,17 @@
 <body>
     <div class="container">
         <h1>PData: Personal Graph Database</h1>
-        <form id="text-form" method="post" action="/process">
+        <div class="example-card">
+            <b>Example to try:</b><br>
+            <span style="font-size:0.98em;">Albert Einstein was a theoretical physicist who developed the theory of relativity. He was born in Germany and received the Nobel Prize in Physics in 1921.</span>
+        </div>
+        <form id="text-form" method="post" action="/process" enctype="multipart/form-data">
             <label for="text">Enter text to extract knowledge graph:</label><br>
-            <textarea id="text" name="text" required placeholder="Paste your text here..."></textarea><br>
+            <textarea id="text" name="text" placeholder="Paste your text here... (optional if uploading image/audio)"></textarea><br>
+            <label for="image">Or upload an image:</label><br>
+            <input type="file" id="image" name="image" accept="image/*" style="margin: 8px 0 12px 0; color: #fff;"><br>
+            <label for="audio">Or upload an audio file:</label><br>
+            <input type="file" id="audio" name="audio" accept="audio/*" style="margin: 8px 0 12px 0; color: #fff;"><br>
             <button type="submit">Extract & Visualize</button>
         </form>
         <div id="graph-container">

@@ -7,3 +7,6 @@ transformers
 torch
 accelerate
 bitsandbytes
+pillow
+SpeechRecognition
+pyaudio
