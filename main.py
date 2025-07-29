@@ -26,6 +26,7 @@ app = FastAPI()
 MODEL_NAME = "google/gemma-3n-E2B-it" 
 
 # Hugging Face token for accessing gated models
+# Hugging Face token for accessing gated models
 HF_TOKEN = os.getenv("HF_TOKEN")  # Set this environment variable with your HF token
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -41,7 +42,6 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=HF_TOKEN)
     # torch_dtype=torch.float32
     # attn_implementation="eager" # Required for some systems
 # )
-
 processor = AutoProcessor.from_pretrained(MODEL_NAME, token=HF_TOKEN)
 model = AutoModelForImageTextToText.from_pretrained(MODEL_NAME, torch_dtype="auto", token=HF_TOKEN).to(device)
 
@@ -244,11 +244,16 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
         if audio_path:
             print(f"DEBUG: Processing audio file: {audio_path}")
             # Process audio using Gemma 3n
-            messages = [{
+            messages = [
+              {
+            "role": "system",
+            "content": [{"type": "text", "text": "You are a helpful assistant. Reply only with the answer to the question asked, and avoid using additional text in your response like 'here's the answer'."}]
+        },
+        {
                 "role": "user",
                 "content": [
                     {"type": "audio", "audio": audio_path},
-                    {"type": "text", "text": "What is this audio about?"}
+                    {"type": "text", "text": "Descripe the audio using Subject-verb-object sentences, avoiding duplicate descriptions. Because we need to get knowledge triples (subject, predicate, object) from the description."}
                 ]
             }]
             try:
@@ -265,7 +270,7 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
                 "role": "user",
                 "content": [
                     {"type": "image", "image": image_path},
-                    {"type": "text", "text": "What is this image about?"}
+                    {"type": "text", "text": "Descripe the image using Subject-verb-object sentences, avioding duplicate descriptions. Because we need to get knowledge triples (subject, predicate, object) from the description."}
                 ]
             }]
             image_text = generate(messages)
