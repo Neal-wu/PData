@@ -90,11 +90,13 @@
         </div>
         <form id="text-form" method="post" action="/process" enctype="multipart/form-data">
             <label for="text">Enter text to extract knowledge graph:</label><br>
-            <textarea id="text" name="text" placeholder="Paste your text here... (optional if uploading image/audio)"></textarea><br>
+            <textarea id="text" name="text" placeholder="Paste your text here... (optional if uploading image/audio/video)"></textarea><br>
             <label for="image">Or upload an image:</label><br>
             <input type="file" id="image" name="image" accept="image/*" style="margin: 8px 0 12px 0; color: #fff;"><br>
             <label for="audio">Or upload an audio file:</label><br>
             <input type="file" id="audio" name="audio" accept="audio/*" style="margin: 8px 0 12px 0; color: #fff;"><br>
+            <label for="video">Or upload a video file:</label><br>
+            <input type="file" id="video" name="video" accept="video/*" style="margin: 8px 0 12px 0; color: #fff;"><br>
             <button type="submit">Extract & Visualize</button>
         </form>
         <div id="graph-container">

@@ -10,3 +10,4 @@ bitsandbytes
 pillow
 SpeechRecognition
 pyaudio
+opencv-python

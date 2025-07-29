@@ -10,6 +10,7 @@ import os
 import gc
 import re
 from dotenv import load_dotenv
+import cv2
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,7 +31,6 @@ MODEL_NAME = "google/gemma-3n-E2B-it"
 HF_TOKEN = os.getenv("HF_TOKEN")  # Set this environment variable with your HF token
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 # --- Model Loading ---
 # Note: This will download the model on first run, which may take some time.
 # Ensure you have enough disk space.
@@ -129,7 +129,8 @@ async def process_multimodal(
     request: Request,
     text: str = Form(None),
     image: UploadFile = File(None),
-    audio: UploadFile = File(None)
+    audio: UploadFile = File(None),
+    video: UploadFile = File(None)
 ):
     """
     Processes text, image, and/or audio input using Gemma 3n model.
@@ -138,10 +139,11 @@ async def process_multimodal(
     has_text = bool(text and text.strip())
     has_image = bool(image and image.filename and image.filename.strip())
     has_audio = bool(audio and audio.filename and audio.filename.strip())
+    has_video = bool(video and video.filename and video.filename.strip())
     
     # Check if any input is provided
-    if not any([has_text, has_image, has_audio]):
-        return HTMLResponse(content="<p style='color: red;'>Please provide text, image, or audio input.</p>", status_code=400)
+    if not any([has_text, has_image, has_audio, has_video]):
+        return HTMLResponse(content="<p style='color: red;'>Please provide text, image, audio, or video input.</p>", status_code=400)
     
     # Validate file types
     if has_image and not image.content_type.startswith('image/'):
@@ -150,9 +152,12 @@ async def process_multimodal(
     if has_audio and not audio.content_type.startswith('audio/'):
         return HTMLResponse(content="<p style='color: red;'>Error: Uploaded file is not a valid audio file.</p>", status_code=400)
     
+    if has_video and not video.content_type.startswith('video/'):
+        return HTMLResponse(content="<p style='color: red;'>Error: Uploaded file is not a valid video file.</p>", status_code=400)
+    
     try:
         # Process files and extract triples
-        triples = await process_inputs(text, image, audio, has_text, has_image, has_audio)
+        triples = await process_inputs(text, image, audio, video, has_text, has_image, has_audio, has_video)
         
         # Add triples to the graph
         for subj, pred, obj in triples:
@@ -168,8 +173,8 @@ async def process_multimodal(
         return HTMLResponse(content=f"<p style='color: red;'>Error getting triples and graph: {str(e)}</p>", status_code=400)
 
 
-async def process_inputs(text: str, image: UploadFile, audio: UploadFile, 
-                        has_text: bool, has_image: bool, has_audio: bool) -> list[tuple[str, str, str]]:
+async def process_inputs(text: str, image: UploadFile, audio: UploadFile, video: UploadFile,
+                        has_text: bool, has_image: bool, has_audio: bool, has_video: bool) -> list[tuple[str, str, str]]:
     """
     Unified function to process all input combinations and extract triples.
     """
@@ -179,6 +184,7 @@ async def process_inputs(text: str, image: UploadFile, audio: UploadFile,
     # Prepare inputs for the unified function
     image_path = None
     audio_path = None
+    video_path = None
     
     if has_image:
         print("has image")
@@ -203,17 +209,34 @@ async def process_inputs(text: str, image: UploadFile, audio: UploadFile,
             print(f"DEBUG: Temporary file exists: {os.path.exists(audio_path)}")
             print(f"DEBUG: Temporary file size: {os.path.getsize(audio_path)} bytes")
     
+    if has_video:
+        # Save video to temporary file
+        print("has video")
+        video_bytes = await video.read()
+        print(f"DEBUG: Video file size: {len(video_bytes)} bytes")
+        print(f"DEBUG: Video file name: {video.filename}")
+        print(f"DEBUG: Video content type: {video.content_type}")
+        
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+            temp_file.write(video_bytes)
+            video_path = temp_file.name
+            print(f"DEBUG: Video saved to temporary file: {video_path}")
+            print(f"DEBUG: Temporary file exists: {os.path.exists(video_path)}")
+            print(f"DEBUG: Temporary file size: {os.path.getsize(video_path)} bytes")
+    
     try:
         print(f"DEBUG: Calling extract_triples_unified with:")
         print(f"DEBUG: - text: {text if has_text else None}")
         print(f"DEBUG: - image_path: {image_path}")
         print(f"DEBUG: - audio_path: {audio_path}")
+        print(f"DEBUG: - video_path: {video_path}")
         
         # Use the unified extraction function
         result = extract_triples_unified(
             text=text if has_text else None,
             image_path=image_path,
-            audio_path=audio_path
+            audio_path=audio_path,
+            video_path=video_path
         )
         print(f"DEBUG: extract_triples_unified returned: {result}")
         return result
@@ -226,10 +249,13 @@ async def process_inputs(text: str, image: UploadFile, audio: UploadFile,
             if audio_path and os.path.exists(audio_path):
                 os.unlink(audio_path)
                 print(f"DEBUG: Cleaned up audio file: {audio_path}")
+            if video_path and os.path.exists(video_path):
+                os.unlink(video_path)
+                print(f"DEBUG: Cleaned up video file: {video_path}")
         except Exception as e:
             print(f"DEBUG: Error during cleanup: {e}")
 
-def extract_triples_unified(text: str = None, image_path: str = None, audio_path: str = None) -> list[tuple[str, str, str]]:
+def extract_triples_unified(text: str = None, image_path: str = None, audio_path: str = None, video_path: str = None) -> list[tuple[str, str, str]]:
     """
     Unified function to extract knowledge triples from any combination of text, image, and audio.
     Uses Gemma 3n model for all processing.
@@ -266,15 +292,95 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
         
         if image_path:
             # Process image using Gemma 3n
-            messages = [{
+            image = resize_image(image_path)
+            messages = [
+              {
+                "role": "system",
+                "content": [{"type": "text", "text": "You are a helpful assistant. Reply only with the answer to the question asked, and avoid using additional text in your response like 'here's the answer'."}]
+            },
+            {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": image_path},
+                    {"type": "image", "image": image},
                     {"type": "text", "text": "Descripe the image using Subject-verb-object sentences, avioding duplicate descriptions. Because we need to get knowledge triples (subject, predicate, object) from the description."}
                 ]
             }]
             image_text = generate(messages)
             prompt_parts.append(f"Image description: {image_text}")
+        
+        if video_path:
+            print(f"DEBUG: Processing video file: {video_path}")
+            
+            # Create frames directory if it doesn't exist
+            frames_dir = "frames"
+            if not os.path.exists(frames_dir):
+                os.makedirs(frames_dir)
+                print(f"DEBUG: Created frames directory: {frames_dir}")
+            
+            # Extract frames from video
+            video_frames = extract_frames(video_path, num_frames=10)
+            
+            if video_frames:
+                # Process video using Gemma 3n with frames
+                messages = [
+                    {
+                        "role": "system",
+                        "content": [{"type": "text", "text": "You are a helpful assistant. Reply only with the answer to the question asked, and avoid using additional text in your response like 'here's the answer'."}]
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Describe the video using Subject-verb-object sentences, avoiding duplicate descriptions. Because we need to get knowledge triples (subject, predicate, object) from the description."}
+                        ]
+                    }
+                ]
+                
+                # Add frames to the messages structure
+                for frame_data in video_frames:
+                    print(f"DEBUG: Processing frame: {frame_data}")
+                    img, timestamp = frame_data
+                    frame_path = f"{frames_dir}/frame_{timestamp}.png"
+                    img.save(frame_path)
+                    print(f"DEBUG: Saved frame to: {frame_path}")
+                    messages[1]["content"].append({"type": "image", "image": frame_path})
+                
+                try:
+                    print(f"DEBUG: Video messages with frames: {messages}")
+                    video_text = generate(messages)
+                    print(f"Video processing result: {video_text}")
+                    prompt_parts.append(f"Video description: {video_text}")
+                except Exception as e:
+                    print(f"DEBUG: Video processing failed: {e}")
+                    
+                # Clean up frame files
+                for frame_data in video_frames:
+                    img, timestamp = frame_data
+                    frame_path = f"{frames_dir}/frame_{timestamp}.png"
+                    if os.path.exists(frame_path):
+                        os.unlink(frame_path)
+                        print(f"DEBUG: Cleaned up frame: {frame_path}")
+            else:
+                print(f"DEBUG: No frames extracted from video")
+                # Fallback: try direct video processing
+                try:
+                    messages = [
+                        {
+                            "role": "system",
+                            "content": [{"type": "text", "text": "You are a helpful assistant. Reply only with the answer to the question asked, and avoid using additional text in your response like 'here's the answer'."}]
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "video", "video": video_path},
+                                {"type": "text", "text": "Describe the video using Subject-verb-object sentences, avoiding duplicate descriptions. Because we need to get knowledge triples (subject, predicate, object) from the description."}
+                            ]
+                        }
+                    ]
+                    video_text = generate(messages)
+                    print(f"Video processing result (direct): {video_text}")
+                    prompt_parts.append(f"Video description: {video_text}")
+                except Exception as e:
+                    print(f"DEBUG: Direct video processing failed: {e}")
         
         # Create the combined prompt
         if len(prompt_parts) == 0:
@@ -312,29 +418,50 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
     except Exception as e:
         print(f"DEBUG: Unified extraction failed: {e}")
         return []
-# def convert_audio_to_text(audio_bytes: bytes) -> str:
-    # """
-    # Converts audio bytes to text using speech recognition.
-    # """
-    # try:
-        # import speech_recognition as sr
-        # import tempfile
-        # 
-        # with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-            # temp_file.write(audio_bytes)
-            # temp_file_path = temp_file.name
-        # 
-        # recognizer = sr.Recognizer()
-        # with sr.AudioFile(temp_file_path) as source:
-            # audio_data = recognizer.record(source)
-            # audio_text = recognizer.recognize_google(audio_data)
-        # 
-        # import os
-        # os.unlink(temp_file_path)
-        # return audio_text
-        
-    # except Exception as e:
-        # print(f"Audio conversion failed: {e}")
-        # return "Audio could not be transcribed"
 
- 
+def extract_frames(video_path, num_frames):
+    """
+    The function is adapted from:
+    https://github.com/merveenoyan/smol-vision/blob/main/Gemma_3_for_Video_Understanding.ipynb
+    """
+    cap = cv2.VideoCapture(video_path)
+
+    if not cap.isOpened():
+        print("Error: Could not open video file.")
+        return []
+
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    # Calculate the step size to evenly distribute frames across the video.
+    step = total_frames // num_frames
+    frames = []
+
+    for i in range(num_frames):
+        frame_idx = i * step
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        ret, frame = cap.read()
+        if not ret:
+            break
+        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        timestamp = round(frame_idx / fps, 2)
+        frames.append((img, timestamp))
+    print(f"DEBUG: Extracted {len(frames)} frames from video")
+    cap.release()
+    return frames
+
+def resize_image(image_path):
+    img = Image.open(image_path)
+
+    target_width, target_height = 640, 640
+    # Calculate the target size (maximum width and height).
+    if target_width and target_height:
+        max_size = (target_width, target_height)
+    elif target_width:
+        max_size = (target_width, img.height)
+    elif target_height:
+        max_size = (img.width, target_height)
+
+    img.thumbnail(max_size)
+
+    return img
