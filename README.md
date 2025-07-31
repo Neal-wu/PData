@@ -1,72 +1,219 @@
-# PData: Personal Graph Database
+# PData: Personalized Graph Database
 
-PData is a project to create a personal, multi-modal graph database using language models. The goal is to build an application that can run on a mobile device, allowing users to build their own knowledge graph from various inputs like text, images, audio, and video.
+PData is a comprehensive personal knowledge graph system that extracts, categorizes, and analyzes your daily activities across multiple life areas. Built with advanced LLM model Gemma 3n, it transforms your text, images, audio, and video inputs into meaningful insights and visual knowledge graphs.
 
-## Project Vision
+## 🌟 Key Features
 
-The core idea is to empower everyone to have their own personal knowledge base that is explorable and visual. Imagine taking a picture of a meal, and having it automatically connected to your nutrition goals, recipes you know, and restaurants you've visited. Or, recording a meeting and getting a graph of the key decisions and action items.
+### 📊 **Personal Analytics Dashboard**
+- **Life Category Analysis**: Automatically categorizes activities into 5 life areas:
+  - 📚💼 **Education & Work**: Learning, studying, work projects, meetings
+  - 🏥 **Healthcare**: Exercise, medication, sleep, diet, wellness
+  - 🎮 **Entertainment**: Media consumption, hobbies, social activities
+  - 💰 **Finance**: Spending, investments, banking, budgeting
+  - 📋 **Other Activities**: Miscellaneous life activities
 
-## Architecture
+### 🔍 **Weekly Reports & Insights**
+- **Smart Categorization**: AI-powered activity classification
+- **Temporal Analysis**: Date-based tracking and trend analysis
+- **Personalized Recommendations**: AI-generated suggestions for life balance
+- **Activity Statistics**: Detailed metrics and patterns
+- **Export Capabilities**: JSON export for external analysis
 
-We will build this project in phases.
+### 🎯 **Unified Multimodal Processing**
+- **Text Input**: Natural language processing for diary entries, notes, descriptions
+- **Image Analysis**: Direct visual content extraction using Gemma 3n
+- **Audio Processing**: Direct audio-to-text conversion using Gemma 3n
+- **Video Analysis**: Direct video content analysis using Gemma 3n
 
-### Phase 1: Text-to-Graph Web PoC (Current)
+### 📈 **Interactive Knowledge Graphs**
+- **Dynamic Visualization**: Interactive network graphs using Pyvis
+- **Relationship Mapping**: Automatic triple extraction (Subject-Predicate-Object)
+- **Real-time Updates**: Live graph generation from inputs
+- **Export Options**: HTML visualization export
 
-This is our starting point. We'll build a web-based application that can:
+## 🚀 Quick Start
 
-1.  Take text input from a user.
-2.  Use a `Gemma` model to extract knowledge triples (e.g., `(Subject, Predicate, Object)`).
-3.  Store these triples in an in-memory graph database.
-4.  Visualize the graph in an interactive way in the browser.
+### Prerequisites
+- Python 3.8+
+- 16GB+ RAM (for Gemma 3n loading)
+- Hugging Face account with access to Gemma models
 
-**Tech Stack:**
+### Installation
 
--   **Language Model:** A small, efficient `Gemma` model from Hugging Face.
--   **Backend:** Python with `FastAPI`.
--   **Graph Processing:** `networkx` for graph data structures.
--   **Graph Visualization:** `pyvis` to generate interactive HTML/JS visualizations.
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd PData
+   ```
 
-### Phase 2: Multi-modal Inputs
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-In the next phase, we will add support for more input types:
+3. **Set up environment variables:**
+   Create a `.env` file in the project root:
+   ```env
+   HF_TOKEN=your_huggingface_token_here
+   ```
 
--   **Images:** Use a vision-language model to describe images, then feed the description to our text-to-graph pipeline.
--   **Audio:** Use a speech-to-text model (like `Whisper`) to transcribe audio, then process the text.
--   **Video:** A combination of audio transcription and keyframe analysis from the video stream.
+4. **Run the application:**
+   ```bash
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
 
-### Phase 3: Mobile Deployment
+5. **Access the application:**
+   Open your browser and navigate to `http://localhost:8000`
 
-This is the most ambitious phase. We will need to:
+## 📖 Usage Guide
 
-1.  **Optimize the models:** Convert the models to a mobile-friendly format like TensorFlow Lite or ONNX Mobile.
-2.  **Choose a mobile framework:** Options include React Native, Flutter, or native iOS/Android.
-3.  **Develop the mobile app:** Create the UI/UX for capturing inputs and visualizing the graph on a small screen.
-4.  **On-device database:** Select a lightweight, on-device database for storing the graph data persistently.
+### Main Interface
+1. **Input Your Activities**: Enter text describing your daily activities
+2. **Upload Media**: Optionally upload images, audio, or video files
+3. **Extract & Visualize**: Click to generate your personal knowledge graph
+4. **View Analytics**: Access detailed category-based reports
 
-## How to Run (Phase 1)
+### Personal Analytics Dashboard
+- **Overall Statistics**: View total activities, categories tracked, and most active areas
+- **Category Reports**: Generate detailed weekly reports for each life area
+- **Search & Filter**: Find specific activities within categories
+- **Trend Analysis**: Track patterns over time
 
-1.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+### Example Inputs
+```
+Text: "I went for a 30-minute walk, had a productive team meeting, 
+studied Python programming for 2 hours, and paid my electricity bill."
 
-2.  **Run the application:**
-    ```bash
-    uvicorn main:app --reload
-    ```
+Image: Photo of your workout session
+Audio: Voice memo about your day
+Video: Recording of a presentation
+```
 
-3.  **Open your browser:**
-    Navigate to `http://127.0.0.1:8000` to see the application. 
+## 🏗️ Architecture
 
-## Privacy
+### Core Components
 
-- All data and models are stored and run locally on your device.
-- No data is sent to the cloud or any third-party service.
-- For extra security, restrict directory permissions (e.g., `chmod 700 graphs static templates`).
-- For mobile deployment, use on-device models and encrypted local storage if needed.
+#### **AI Processing Pipeline**
+- **Model**: Google Gemma 3n-E2B-it (unified multimodal)
+- **Processing**: Single model handles text, image, audio, video natively
+- **Output**: Structured knowledge triples from any input type
 
-## Mobile Deployment Notes
+#### **Analytics Engine**
+- **Categorization**: Keyword-based activity classification
+- **Temporal Tracking**: Date-based activity recording
+- **Insight Generation**: Pattern recognition and recommendations
+- **Report Generation**: Automated weekly summaries
 
-- Convert the Gemma model to TensorFlow Lite, ONNX, or CoreML for mobile use.
-- Use Flutter or native Android/iOS for the app. See the `mobile/` directory for a suggested structure.
-- All processing and storage remain on-device for privacy. 
+#### **Web Interface**
+- **FastAPI Backend**: RESTful API with real-time processing
+- **Interactive Frontend**: Modern, responsive web interface
+- **Graph Visualization**: Dynamic network graphs
+- **Analytics Dashboard**: Comprehensive reporting interface
+
+### File Structure
+```
+PData/
+├── main.py                          # FastAPI application entry point
+├── personal_analytics.py            # Core analytics engine
+├── personal_analytics_integration.py # Web interface integration
+├── templates/
+│   └── index.html                   # Main web interface (Jinja2 template)
+├── graphs/                          # Generated knowledge graph visualizations
+├── frames/                          # Temporary video frame storage
+├── requirements.txt                 # Python dependencies
+└── README.md                        # This file
+```
+
+## 🔧 Technical Details
+
+### Dependencies
+- **FastAPI**: Modern web framework for APIs
+- **Transformers**: Hugging Face AI model library
+- **NetworkX**: Graph data structures and algorithms
+- **Pyvis**: Interactive network visualizations
+- **Gemma 3n**: Unified multimodal AI model (handles text, image, audio, video)
+
+### AI Model Specifications
+- **Model**: `google/gemma-3n-E2B-it`
+- **Type**: Unified multimodal (text, image, audio, video)
+- **Size**: ~2B parameters
+- **Memory**: ~4GB RAM (with quantization)
+- **Capabilities**: Native multimodal knowledge extraction, no separate preprocessing needed
+
+### Performance Considerations
+- **Model Loading**: First run downloads ~4GB model
+- **Memory Usage**: ~4-6GB RAM during operation
+- **Processing Speed**: Real-time for text, 2-5 seconds for media
+- **Storage**: Minimal local storage for graphs and analytics
+
+## 🔒 Privacy & Security
+
+- **Local Processing**: All AI processing happens on your device
+- **No Cloud Storage**: Data never leaves your machine
+- **Secure Storage**: Local file system with optional encryption
+- **Model Privacy**: Downloaded models run entirely locally
+
+## 🎯 Use Cases
+
+### Personal Productivity
+- Track daily activities and habits
+- Analyze time allocation across life areas
+- Identify patterns and optimize routines
+- Set and monitor personal goals
+
+### Health & Wellness
+- Monitor exercise and diet patterns
+- Track medication and health metrics
+- Analyze sleep and wellness trends
+- Generate health insights and recommendations
+
+### Learning & Development
+- Document learning activities and progress
+- Track skill development over time
+- Analyze study patterns and effectiveness
+- Connect learning to real-world applications
+
+### Financial Management
+- Track spending patterns and habits
+- Monitor investment activities
+- Analyze budget compliance
+- Generate financial insights
+
+## 🚀 Future Enhancements
+
+### Planned Features
+- **Mobile App**: Native iOS/Android applications
+- **Advanced Analytics**: Machine learning insights
+- **Integration APIs**: Connect with external services
+- **Collaborative Features**: Share insights with family/team
+- **Advanced Visualization**: 3D graphs and timeline views
+
+### Performance Optimizations
+- **Model Quantization**: Further reduce memory usage
+- **Caching**: Optimize repeated operations
+- **Batch Processing**: Handle multiple inputs efficiently
+- **Cloud Deployment**: Optional cloud processing for heavy workloads
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For issues, questions, or feature requests:
+- Create an issue in the repository
+- Check the documentation
+- Review the code comments for implementation details
+
+---
+
+**PData**: Transform your daily activities into meaningful insights with AI-powered personal analytics. 
+

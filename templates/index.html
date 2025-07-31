@@ -84,6 +84,23 @@
 <body>
     <div class="container">
         <h1>PData: Personalized Graph Database</h1>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/analytics" style="
+                display: inline-block;
+                padding: 12px 24px;
+                background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+                margin-right: 10px;
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(23, 162, 184, 0.4)'" 
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(23, 162, 184, 0.3)'">
+                📊 Personal Analytics
+            </a>
+        </div>
         <form id="text-form" method="post" action="/process" enctype="multipart/form-data">
             <label for="text">Enter text to extract knowledge graph:</label><br>
             <textarea id="text" name="text" placeholder="Paste your text here... (optional if uploading image/audio/video)"></textarea><br>

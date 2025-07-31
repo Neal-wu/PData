@@ -14,7 +14,7 @@ import cv2
 
 # Load environment variables from .env file
 load_dotenv()
-from datetime import datetime
+import datetime
 from PIL import Image
 import io
 import base64
@@ -25,16 +25,14 @@ app = FastAPI()
 # Using Gemma 3n instruct model for improved extraction
 # Change from text-only to vision model
 MODEL_NAME = "google/gemma-3n-E2B-it" 
-
 # Hugging Face token for accessing gated models
 # Hugging Face token for accessing gated models
 HF_TOKEN = os.getenv("HF_TOKEN")  # Set this environment variable with your HF token
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # --- Model Loading ---
 # Note: This will download the model on first run, which may take some time.
 # Ensure you have enough disk space.
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=HF_TOKEN)
+# tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=HF_TOKEN)
 # To make it runnable on most systems, we'll load in 4-bit for lower memory usage
 # model = AutoModelForCausalLM.from_pretrained(
     # MODEL_NAME,
@@ -86,6 +84,13 @@ templates = Jinja2Templates(directory="templates")
 
 # --- In-memory Graph Storage ---
 G = nx.DiGraph()
+
+# Initialize personal analytics
+from personal_analytics import PersonalAnalytics
+from personal_analytics_integration import integrate_analytics_to_main_app, set_analytics_instance
+
+personal_analytics = PersonalAnalytics()
+set_analytics_instance(personal_analytics)
 
 def create_graph_visualization(graph: nx.DiGraph, file_path: str):
     """
@@ -163,11 +168,67 @@ async def process_multimodal(
         for subj, pred, obj in triples:
             G.add_edge(subj, obj, label=pred)
 
+        # Load triples into personal analytics for categorization and reporting
+        # Use current date as the activity date
+        personal_analytics.load_graph_from_triples(triples, activity_date=datetime.datetime.now().date())
+
         # Create a new visualization
         graph_file = "graphs/knowledge_graph.html"
         create_graph_visualization(G, graph_file)
 
-        return f'<iframe src="{graph_file}" width="100%" height="750px"></iframe>'
+        # Return enhanced HTML response with analytics links
+        return HTMLResponse(content=f"""
+        <html>
+        <head>
+            <title>Knowledge Graph Visualization</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ background-color: #f0f0f0; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .triples {{ background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .graph-container {{ border: 1px solid #ddd; border-radius: 5px; }}
+                .actions {{ margin: 20px 0; }}
+                .btn {{ 
+                    display: inline-block; 
+                    padding: 10px 20px; 
+                    margin: 5px; 
+                    background-color: #007bff; 
+                    color: white; 
+                    text-decoration: none; 
+                    border-radius: 5px; 
+                    transition: background-color 0.3s;
+                }}
+                .btn:hover {{ background-color: #0056b3; }}
+                .btn-success {{ background-color: #28a745; }}
+                .btn-success:hover {{ background-color: #1e7e34; }}
+                .btn-info {{ background-color: #17a2b8; }}
+                .btn-info:hover {{ background-color: #138496; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Knowledge Graph Visualization</h1>
+                <p>Extracted {len(triples)} knowledge triples from your input.</p>
+                <div class="actions">
+                    <a href="/" class="btn">← Back to Input</a>
+                    <a href="/analytics" class="btn btn-success">📊 Personal Analytics</a>
+                    <a href="/analytics/healthcare" class="btn btn-info">🏥 Healthcare Report</a>
+                    <a href="/analytics/education_work" class="btn btn-info">📚💼 Education & Work Report</a>
+                </div>
+            </div>
+            
+            <div class="triples">
+                <h2>Extracted Triples:</h2>
+                <ul>
+                    {''.join(f'<li><strong>{subj}</strong> --{pred}--> <strong>{obj}</strong></li>' for subj, pred, obj in triples)}
+                </ul>
+            </div>
+            
+            <div class="graph-container">
+                <iframe src="{graph_file}" width="100%" height="750px"></iframe>
+            </div>
+        </body>
+        </html>
+        """)
         
     except Exception as e:
         return HTMLResponse(content=f"<p style='color: red;'>Error getting triples and graph: {str(e)}</p>", status_code=400)
@@ -389,7 +450,7 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
         combined_prompt = f"""
         Extract knowledge triples (subject, predicate, object) from the following combined input.
         {chr(10).join(prompt_parts)}
-        Provide the output as a list of comma-separated values, where each line is a new triple.
+        Provide the output as a list of comma-separated values, where each line is a new triple. 
         Triples:
         """
         
@@ -465,3 +526,6 @@ def resize_image(image_path):
     img.thumbnail(max_size)
 
     return img
+
+# Integrate analytics functionality
+integrate_analytics_to_main_app(app)
