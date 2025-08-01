@@ -1,3 +1,5 @@
+# This project is developed specifically for kaggle competition https://www.kaggle.com/competitions/google-gemma-3n-hackathon/overview
+
 # PData: Personalized Graph Database
 
 PData is a comprehensive personal knowledge graph system that extracts, categorizes, and analyzes your daily activities across multiple life areas. Built with advanced LLM model Gemma 3n, it transforms your text, images, audio, and video inputs into meaningful insights and visual knowledge graphs.
@@ -20,7 +22,7 @@ PData is a comprehensive personal knowledge graph system that extracts, categori
 - **Export Capabilities**: JSON export for external analysis
 
 ### 🎯 **Unified Multimodal Processing**
-- **Text Input**: Natural language processing for diary entries, notes, descriptions
+- **Text Input**: Using Gemma for diary entries, notes, descriptions
 - **Image Analysis**: Direct visual content extraction using Gemma 3n
 - **Audio Processing**: Direct audio-to-text conversion using Gemma 3n
 - **Video Analysis**: Direct video content analysis using Gemma 3n
@@ -113,11 +115,11 @@ Video: Recording of a presentation
 ### File Structure
 ```
 PData/
-├── main.py                          # FastAPI application entry point
+├── main.py                          # FastAPI application entry point & Gemma 3n processing
 ├── personal_analytics.py            # Core analytics engine
 ├── personal_analytics_integration.py # Web interface integration
 ├── templates/
-│   └── index.html                   # Main web interface (Jinja2 template)
+│   └── index.html                   # Main web interface
 ├── graphs/                          # Generated knowledge graph visualizations
 ├── frames/                          # Temporary video frame storage
 ├── requirements.txt                 # Python dependencies
@@ -137,14 +139,7 @@ PData/
 - **Model**: `google/gemma-3n-E2B-it`
 - **Type**: Unified multimodal (text, image, audio, video)
 - **Size**: ~2B parameters
-- **Memory**: ~4GB RAM (with quantization)
 - **Capabilities**: Native multimodal knowledge extraction, no separate preprocessing needed
-
-### Performance Considerations
-- **Model Loading**: First run downloads ~4GB model
-- **Memory Usage**: ~4-6GB RAM during operation
-- **Processing Speed**: Real-time for text, 2-5 seconds for media
-- **Storage**: Minimal local storage for graphs and analytics
 
 ## 🔒 Privacy & Security
 
@@ -192,7 +187,6 @@ PData/
 - **Model Quantization**: Further reduce memory usage
 - **Caching**: Optimize repeated operations
 - **Batch Processing**: Handle multiple inputs efficiently
-- **Cloud Deployment**: Optional cloud processing for heavy workloads
 
 ## 🤝 Contributing
 
