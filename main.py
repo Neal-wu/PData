@@ -22,27 +22,16 @@ import base64
 app = FastAPI()
 
 # --- Configuration ---
-# Using Gemma 3n instruct model for improved extraction
-# Change from text-only to vision model
+# Using Gemma 3n  model for multimodal processing
 MODEL_NAME = "google/gemma-3n-E2B-it" 
-# Hugging Face token for accessing gated models
 # Hugging Face token for accessing gated models
 HF_TOKEN = os.getenv("HF_TOKEN")  # Set this environment variable with your HF token
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # --- Model Loading ---
-# Note: This will download the model on first run, which may take some time.
-# Ensure you have enough disk space.
-# tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=HF_TOKEN)
-# To make it runnable on most systems, we'll load in 4-bit for lower memory usage
-# model = AutoModelForCausalLM.from_pretrained(
-    # MODEL_NAME,
-    # device_map=device,
-    # torch_dtype=torch.float32
-    # attn_implementation="eager" # Required for some systems
-# )
 processor = AutoProcessor.from_pretrained(MODEL_NAME, token=HF_TOKEN)
 model = AutoModelForImageTextToText.from_pretrained(MODEL_NAME, torch_dtype="auto", token=HF_TOKEN).to(device)
 
+#function to process all inputs with gemma 3n model
 def generate(messages):
 
     print(f"detailed messages: {messages}")
@@ -75,10 +64,6 @@ def generate(messages):
 if not os.path.exists("graphs"):
     os.makedirs("graphs")
 
-# Remove this line if you don't need it
-# app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Keep this one - it's essential
 app.mount("/graphs", StaticFiles(directory="graphs"), name="graphs")
 templates = Jinja2Templates(directory="templates")
 
@@ -349,7 +334,6 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
                 prompt_parts.append(f'Audio transcription: "{audio_text}"')
             except Exception as e:
                 print(f"DEBUG: Audio processing failed: {e}")
-                # prompt_parts.append('Audio transcription: "Audio processing failed"')
         
         if image_path:
             # Process image using Gemma 3n
@@ -422,7 +406,7 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
                         print(f"DEBUG: Cleaned up frame: {frame_path}")
             else:
                 print(f"DEBUG: No frames extracted from video")
-                # Fallback: try direct video processing
+                # direct video processing
                 try:
                     messages = [
                         {
@@ -464,7 +448,7 @@ def extract_triples_unified(text: str = None, image_path: str = None, audio_path
         
         response_text = generate(messages)
         
-        # Extract triples
+        # Extract triples from the response
         triples_text = response_text.split("Triples:")[1].strip() if "Triples:" in response_text else response_text
         
         triples = []

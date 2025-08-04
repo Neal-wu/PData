@@ -1,4 +1,4 @@
-# PData: A Unified Multimodal Personal Knowledge Graph System Powered by Gemma 3n
+# PData: A Unified Multimodal Personalized Graph Database System Powered by Gemma 3n
 
 ## Abstract
 
@@ -79,6 +79,7 @@ The analytics engine categorizes activities into five life areas:
 
 ```python
 MODEL_NAME = "google/gemma-3n-E2B-it"
+HF_TOKEN = 'your HF token'
 processor = AutoProcessor.from_pretrained(MODEL_NAME, token=HF_TOKEN)
 model = AutoModelForImageTextToText.from_pretrained(
     MODEL_NAME, 
@@ -105,7 +106,7 @@ def extract_triples_unified(text=None, image_path=None, audio_path=None, video_p
 ```
 
 **Key Technical Choices:**
-- **Model Size**: 2B parameters for optimal on-device performance
+- **Model Size**: resource_based parameters size for optimal on-device performance
 - **Quantization**: Automatic dtype optimization for memory efficiency
 - **Unified Processing**: Single model handles all input modalities
 
@@ -114,12 +115,12 @@ def extract_triples_unified(text=None, image_path=None, audio_path=None, video_p
 The system extracts structured knowledge triples using a specialized prompt:
 
 ```python
-KNOWLEDGE_EXTRACTION_PROMPT = """
-Extract knowledge triples from the input. 
-Format: (Subject, Predicate, Object)
-Focus on personal activities, relationships, and life events.
-Use "I" as the subject for personal activities.
-"""
+ prompt = f"""
+ Extract knowledge triples (subject, predicate, object) from the following combined input.
+ {chr(10).join(input_messages)}
+ Provide the output as a list of comma-separated values, where each line is a new triple. 
+ Triples:
+ """
 ```
 
 ### 3.3 Analytics and Categorization
@@ -163,8 +164,7 @@ Text/Image/Audio/Video → Gemma 3n → Triples
 
 **Memory Optimization:**
 - **Quantization**: Automatic dtype optimization reduces memory footprint
-- **Model Size**: 2B parameters balance performance and resource usage
-- **Memory Efficiency**: 60% reduction compared to separate models
+- **Model Size**: flexible model size choices to optimize resource usage
 
 ### 4.3 Privacy-Preserving Architecture
 
@@ -190,7 +190,7 @@ User Input → Local Gemma 3n → Local Storage → Local Analytics
 
 **Problem**: Large language models require significant memory resources.
 
-**Solution**: Implemented efficient memory management with automatic cleanup after inference.
+**Solution**: Implemented efficient memory management with automatic cleanup after inference. Resource-based model size choice.
 
 ### 5.3 Challenge: Temporal Data Tracking
 
