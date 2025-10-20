@@ -1,4 +1,4 @@
-# Now Pdata Can Be Downloaded from App Store
+# Now Pdata Can be Downloaded from App Store
 # This project is developed for kaggle competition https://www.kaggle.com/competitions/google-gemma-3n-hackathon/overview
 
 # PData: Personalized Graph Database
