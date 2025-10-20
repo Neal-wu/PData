@@ -1,4 +1,4 @@
-# This project is developed specifically for kaggle competition https://www.kaggle.com/competitions/google-gemma-3n-hackathon/overview
+# This project is developed for kaggle competition https://www.kaggle.com/competitions/google-gemma-3n-hackathon/overview
 
 # PData: Personalized Graph Database
 
